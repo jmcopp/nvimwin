@@ -11,8 +11,6 @@ return {
     opts = {},
     lazy = false,
   },
-  -- useful when there are embedded languages in certain types of files (e.g. Vue or React)
-  { "joosepalviste/nvim-ts-context-commentstring", lazy = true },
 
   -- Neovim plugin to improve the default vim.ui interfaces
   {
@@ -29,70 +27,9 @@ return {
     "j-hui/fidget.nvim",
   },
 
-  -- find and replace
-  {
-    "windwp/nvim-spectre",
-    enabled = true,
-    event = "BufRead",
-    keys = {
-      {
-        "<leader>Rr",
-        function()
-          require("spectre").open()
-        end,
-        desc = "Replace",
-      },
-      {
-        "<leader>Rw",
-        function()
-          require("spectre").open_visual({ select_word = true })
-        end,
-        desc = "Replace Word",
-      },
-      {
-        "<leader>Rf",
-        function()
-          require("spectre").open_file_search()
-        end,
-        desc = "Replace Buffer",
-      },
-    },
-  },
-
   -- Heuristically set buffer options
   {
     "tpope/vim-sleuth",
-  },
-
-  {
-    {
-      "folke/lazydev.nvim",
-      ft = "lua", -- only load on lua files
-      opts = {
-        library = {
-          -- See the configuration section for more details
-          -- Load luvit types when the `vim.uv` word is found
-          { path = "${3rd}/luv/library", words = { "vim%.uv" } },
-        },
-      },
-    },
-    -- {
-    --   "saghen/blink.cmp",
-    --   opts = {
-    --     sources = {
-    --       -- add lazydev to your completion providers
-    --       default = { "lazydev", "lsp", "path", "snippets", "buffer" },
-    --       providers = {
-    --         lazydev = {
-    --           name = "LazyDev",
-    --           module = "lazydev.integrations.blink",
-    --           -- make lazydev completions top priority (see `:h blink.cmp`)
-    --           score_offset = 100,
-    --         },
-    --       },
-    --     },
-    --   },
-    -- }
   },
 
   -- editor config support
@@ -147,13 +84,6 @@ return {
   --     })
   --   end,
   -- },
-  -- persist sessions
-  {
-    "folke/persistence.nvim",
-    event = "BufReadPre", -- this will only start session saving when an actual file was opened
-    opts = {},
-  },
-
   {
     "echasnovski/mini.nvim",
     config = function()
@@ -186,34 +116,146 @@ return {
   },
 
   {
-    "echasnovski/mini.icons",
-    enabled = true,
-    opts = {},
-    lazy = true,
-  },
-
-  {
     "fladson/vim-kitty",
     "MunifTanjim/nui.nvim",
   },
   {
-    "nvchad/showkeys",
-    cmd = "ShowkeysToggle",
+    "tris203/precognition.nvim",
+    event = "VeryLazy",
     opts = {
-      timeout = 1,
-      maxkeys = 6,
-      -- bottom-left, bottom-right, bottom-center, top-left, top-right, top-center
-      position = "bottom-right",
+      startVisible = false,
     },
-
     keys = {
       {
-        "<leader>ut",
+        "<leader>up",
         function()
-          vim.cmd("ShowkeysToggle")
+          require("precognition").toggle()
         end,
-        desc = "Show key presses",
+        desc = "Toggle Precognition",
       },
     },
+  },
+
+  {
+    "karb94/neoscroll.nvim",
+    event = "VeryLazy",
+    opts = {
+      hide_cursor = true,
+      stop_eof = true,
+      respect_scrolloff = false,
+      cursor_scrolls_alone = true,
+      easing_function = "sine",
+      performance_mode = false,
+    },
+  },
+
+  {
+    "folke/twilight.nvim",
+    event = "VeryLazy",
+    opts = {
+      dimming = {
+        alpha = 0.25,
+        color = { "Normal", "#ffffff" },
+        term_bg = "#000000",
+        inactive = false,
+      },
+      context = 10,
+      treesitter = true,
+      expand = {
+        "function",
+        "method",
+        "table",
+        "if_statement",
+      },
+    },
+    keys = {
+      {
+        "<leader>uT",
+        "<cmd>Twilight<cr>",
+        desc = "Toggle Twilight",
+      },
+    },
+  },
+
+  -- Alpha.nvim dashboard with rotating cube
+  {
+    "goolord/alpha-nvim",
+    event = "VimEnter",
+    config = function()
+      require("alpha-cube").setup()
+      
+      -- Handle directory opening and auto-open file explorer
+      vim.api.nvim_create_autocmd("VimEnter", {
+        callback = function()
+          local argv = vim.fn.argv()
+          if #argv == 1 and vim.fn.isdirectory(argv[1]) == 1 then
+            vim.cmd("cd " .. vim.fn.fnameescape(argv[1]))
+            -- Close the directory buffer first
+            vim.cmd("bdelete")
+            -- Open alpha, then explorer
+            vim.schedule(function()
+              vim.cmd("Alpha")
+              vim.schedule(function()
+                Snacks.explorer()
+              end)
+            end)
+          elseif #argv == 0 then
+            -- For plain 'nvim', also open explorer
+            vim.schedule(function()
+              Snacks.explorer()
+            end)
+          end
+        end,
+      })
+    end,
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+
+  {
+    "jbyuki/venn.nvim",
+    event = "VeryLazy",
+    keys = {
+      {
+        "<leader>uv",
+        function()
+          local venn_enabled = vim.inspect(vim.b.venn_enabled)
+          if venn_enabled == "nil" then
+            vim.b.venn_enabled = true
+            vim.cmd([[setlocal ve=all]])
+            vim.api.nvim_buf_set_keymap(0, "n", "J", "<C-v>j:VBox<CR>", { noremap = true })
+            vim.api.nvim_buf_set_keymap(0, "n", "K", "<C-v>k:VBox<CR>", { noremap = true })
+            vim.api.nvim_buf_set_keymap(0, "n", "L", "<C-v>l:VBox<CR>", { noremap = true })
+            vim.api.nvim_buf_set_keymap(0, "n", "H", "<C-v>h:VBox<CR>", { noremap = true })
+            vim.api.nvim_buf_set_keymap(0, "v", "f", ":VBox<CR>", { noremap = true })
+            print("Venn mode enabled")
+          else
+            vim.cmd([[setlocal ve=]])
+            vim.cmd([[mapclear <buffer>]])
+            vim.b.venn_enabled = nil
+            print("Venn mode disabled")
+          end
+        end,
+        desc = "Toggle Venn Drawing Mode",
+      },
+    },
+  },
+
+  {
+    "xiyaowong/transparent.nvim",
+    config = function()
+      require("transparent").setup({
+        groups = {
+          'Normal', 'NormalNC', 'Comment', 'Constant', 'Special', 'Identifier',
+          'Statement', 'PreProc', 'Type', 'Underlined', 'Todo', 'String', 'Function',
+          'Conditional', 'Repeat', 'Operator', 'Structure', 'LineNr', 'NonText',
+          'SignColumn', 'CursorLine', 'CursorLineNr', 'StatusLine', 'StatusLineNC',
+          'EndOfBuffer',
+        },
+        extra_groups = {},
+        exclude_groups = {},
+      })
+      require("transparent").clear_prefix("BufferLine")
+      require("transparent").clear_prefix("NeoTree")
+    end
   },
 }

@@ -156,15 +156,4 @@ return {
   "tpope/vim-fugitive",
   "tpope/vim-rhubarb",
 
-  -- not git, but it's okay
-  {
-    "mbbill/undotree",
-    keys = {
-      {
-        "<leader>GU",
-        ":UndotreeToggle<CR>",
-        desc = "Toggle UndoTree",
-      },
-    },
-  },
 }
