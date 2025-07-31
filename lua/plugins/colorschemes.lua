@@ -292,6 +292,15 @@ return {
         ["@lsp.type.struct"] = { fg = custom_colors.type },
         ["@lsp.type.type"] = { fg = custom_colors.type },
         ["@lsp.type.variable"] = { fg = custom_colors.fg },
+
+        -- Noice cmdline colors
+        NoiceCmdline = { fg = custom_colors.fg },
+        NoiceCmdlinePrompt = { fg = custom_colors.fg },
+        NoiceCmdlineIcon = { fg = custom_colors.fg },
+        NoiceCmdlineIconCmdline = { fg = custom_colors.fg },
+        NoiceCmdlineIconSearch = { fg = custom_colors.fg },
+        MsgArea = { fg = custom_colors.fg },
+        Cmdline = { fg = custom_colors.fg },
       }
 
       -- Apply all custom highlights

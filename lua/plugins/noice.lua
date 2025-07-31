@@ -27,5 +27,30 @@ return {
         lsp_doc_border = true,        -- add a border to hover docs and signature help
       },
     })
+    
+    -- Set cmdline color to match your tan colorscheme
+    -- Removed vim.schedule to avoid callback errors
+    vim.api.nvim_set_hl(0, "NoiceCmdline", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlinePrompt", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlineIcon", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlineIconCmdline", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlineIconSearch", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "NoiceCmdlinePopupBorder", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "MsgArea", { fg = "#e1e3cb" })
+    vim.api.nvim_set_hl(0, "Cmdline", { fg = "#e1e3cb" })
+    -- Try overriding with force
+    vim.api.nvim_set_hl(0, "NoiceCmdline", { fg = "#e1e3cb", force = true })
+    
+    -- Also set an autocmd to ensure it applies after colorscheme changes
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      callback = function()
+        vim.api.nvim_set_hl(0, "NoiceCmdline", { fg = "#e1e3cb" })
+        vim.api.nvim_set_hl(0, "NoiceCmdlinePrompt", { fg = "#e1e3cb" })
+        vim.api.nvim_set_hl(0, "NoiceCmdlineIcon", { fg = "#e1e3cb" })
+        vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { fg = "#e1e3cb" })
+        vim.api.nvim_set_hl(0, "MsgArea", { fg = "#e1e3cb" })
+      end,
+    })
   end,
 }

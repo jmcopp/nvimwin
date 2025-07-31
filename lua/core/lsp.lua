@@ -49,9 +49,8 @@ local function restart_lsp(bufnr)
         vim.lsp.stop_client(client.id)
     end
 
-    vim.defer_fn(function()
-        vim.cmd('edit')
-    end, 100)
+    -- Removed vim.defer_fn to avoid scheduling errors
+    vim.cmd('edit')
 end
 
 vim.api.nvim_create_user_command('LspRestart', function()

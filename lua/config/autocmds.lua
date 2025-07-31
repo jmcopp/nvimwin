@@ -189,3 +189,52 @@ vim.api.nvim_create_autocmd("FileType", {
         pcall(vim.treesitter.start)
     end,
 })
+
+-- Claude Code Worktree Integration: File Watching and Auto-Opening
+local claude_group = vim.api.nvim_create_augroup("ClaudeCodeIntegration", { clear = true })
+
+-- Simple file change detection (minimal)
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
+    group = claude_group,
+    callback = function()
+        if vim.fn.mode() ~= "c" then
+            vim.cmd("checktime")
+        end
+    end,
+})
+
+-- Auto-open files created by claude code
+vim.api.nvim_create_autocmd("User", {
+    group = claude_group,
+    pattern = "ClaudeFileCreated",
+    callback = function(event)
+        local filepath = event.data.filepath
+        if filepath and vim.fn.filereadable(filepath) == 1 then
+            -- Open in new buffer
+            vim.cmd("edit " .. filepath)
+            print("🤖 Opened file created by Claude: " .. vim.fn.fnamemodify(filepath, ":t"))
+        end
+    end,
+})
+
+-- Initialize Neovim server for external communication
+vim.api.nvim_create_autocmd("VimEnter", {
+    group = claude_group,
+    callback = function()
+        local server_address = vim.env.NVIM_LISTEN_ADDRESS or "/tmp/nvim-ai-session"
+        if vim.fn.serverstart then
+            pcall(vim.fn.serverstart, server_address)
+        end
+    end,
+})
+
+-- Simple directory change detection (no scheduling)
+vim.api.nvim_create_autocmd("DirChanged", {
+    group = claude_group,
+    callback = function()
+        -- Simple notification without scheduling
+        if package.loaded["git-worktree"] then
+            vim.cmd("doautocmd User GitWorktreeChanged")
+        end
+    end,
+})

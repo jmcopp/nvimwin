@@ -192,18 +192,11 @@ return {
             vim.cmd("cd " .. vim.fn.fnameescape(argv[1]))
             -- Close the directory buffer first
             vim.cmd("bdelete")
-            -- Open alpha, then explorer
-            vim.schedule(function()
-              vim.cmd("Alpha")
-              vim.schedule(function()
-                Snacks.explorer()
-              end)
-            end)
+            -- Open alpha only (removed explorer to avoid scheduling errors)
+            vim.cmd("Alpha")
           elseif #argv == 0 then
-            -- For plain 'nvim', also open explorer
-            vim.schedule(function()
-              Snacks.explorer()
-            end)
+            -- For plain 'nvim', do nothing to avoid scheduling errors
+            -- User can manually open explorer with :Snacks explorer
           end
         end,
       })
