@@ -93,3 +93,7 @@ vim.keymap.set("n", "<C-P>", ':lua require("config.utils").toggle_go_test()<CR>'
 vim.keymap.set("v", "<leader>ln", ':lua require("config.utils").get_highlighted_line_numbers()<CR>', opts)
 
 vim.keymap.set("n", "<Esc>", ":nohlsearch<CR>", opts)
+
+-- Lazy plugin manager
+vim.keymap.set("n", "<leader>L", ":Lazy<CR>", { silent = true, desc = "Open Lazy" })
+vim.keymap.set("n", "<leader>Ls", ":Lazy sync<CR>", { silent = true, desc = "Lazy sync" })

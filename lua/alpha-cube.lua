@@ -200,6 +200,7 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.keymap.set("n", "r", ":lua Snacks.picker.recent()<CR>", { buffer = true, silent = true })
         vim.keymap.set("n", "p", ":lua Snacks.picker.projects()<CR>", { buffer = true, silent = true })
         vim.keymap.set("n", "s", ":e $MYVIMRC<CR>", { buffer = true, silent = true })
+        vim.keymap.set("n", "L", ":Lazy<CR>", { buffer = true, silent = true })
         vim.keymap.set("n", "q", ":qa<CR>", { buffer = true, silent = true })
     end,
 })
