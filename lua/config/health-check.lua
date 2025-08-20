@@ -6,17 +6,18 @@ function M.check_all()
     print("      NEOVIM CONFIGURATION HEALTH   ")
     print("═══════════════════════════════════")
     print("")
-
-    -- Check Mason tools
-    print("🔧 MASON TOOLS:")
-    local mason_verify = require("config.mason-verify")
-    mason_verify.verify_tools()
-    print("")
-
+    
+    -- Check Mason tools (DISABLED)
+    -- print("🔧 MASON TOOLS:")
+    -- local mason_verify = require("config.mason-verify")
+    -- mason_verify.verify_tools()
+    -- print("")
+    
     -- Check LSP status
     print("󰒋 LSP STATUS:")
     local bufnr = vim.api.nvim_get_current_buf()
     local clients = vim.lsp.get_clients({ bufnr = bufnr })
+    
     if #clients > 0 then
         for _, client in ipairs(clients) do
             print("  ✓ " .. client.name .. " (ID: " .. client.id .. ")")
@@ -25,7 +26,7 @@ function M.check_all()
         print("  ⚠ No LSP clients attached to current buffer")
     end
     print("")
-
+    
     -- Check formatters
     print("󰉿 FORMATTERS:")
     local ok, conform = pcall(require, "conform")
@@ -42,7 +43,7 @@ function M.check_all()
         print("  ✗ Conform.nvim not loaded")
     end
     print("")
-
+    
     -- Check linters
     print("󰁨 LINTERS:")
     local ok, lint = pcall(require, "lint")
@@ -59,18 +60,18 @@ function M.check_all()
         print("  ✗ nvim-lint not loaded")
     end
     print("")
-
+    
     -- Check key plugins
     print("📦 KEY PLUGINS:")
     local plugins_to_check = {
-        { name = "mason",      module = "mason" },
+        -- { name = "mason",      module = "mason" },        -- Disabled Mason
         { name = "conform",    module = "conform" },
         { name = "lint",       module = "lint" },
         { name = "trouble",    module = "trouble" },
         { name = "dap",        module = "dap" },
         { name = "treesitter", module = "nvim-treesitter" },
     }
-
+    
     for _, plugin in ipairs(plugins_to_check) do
         local ok, _ = pcall(require, plugin.module)
         if ok then
@@ -80,9 +81,9 @@ function M.check_all()
         end
     end
     print("")
-
+    
     print("Run :checkhealth for detailed Neovim health information")
-    print("Run :MasonVerify for detailed Mason tool verification")
+    -- print("Run :MasonVerify for detailed Mason tool verification")  -- Disabled Mason command
 end
 
 -- Create user command

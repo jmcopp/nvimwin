@@ -46,7 +46,7 @@ end
 
 -- Render a single cube frame
 local function render_cube_frame(A, B, C)
-    local width, height = vim.o.columns, 25 -- Reduced height for cube area
+    local width, height = vim.o.columns, 25 -- Cube rendering area
     local buffer = {}
     local z_buffer = {}
     
@@ -138,29 +138,7 @@ local function stop_animation()
     end
 end
 
--- Create graffiti header with proper centering
-local function get_graffiti_header()
-    local header_lines = {
-        "",
-        "_________  ________ ____________________.____________  ____  __.",
-        "\\_   ___ \\ \\_____  \\\\______   \\______   \\   \\_   ___ \\|    |/ _|",
-        "/    \\  \\/  /   |   \\|     ___|\\     ___|   /    \\  \\/|      <  ",
-        "\\     \\____/    |    \\    |    |    |   |   \\     \\___|    |  \\ ",
-        " \\______  /\\_______  /____|    |____|   |___|\\______  /____|__ \\",
-        "        \\/         \\/                               \\/        \\/",
-        "",
-    }
-    
-    -- Center each line horizontally
-    local terminal_width = vim.o.columns
-    local centered_lines = {}
-    for _, line in ipairs(header_lines) do
-        local padding = math.max(0, math.floor((terminal_width - #line) / 2))
-        table.insert(centered_lines, string.rep(" ", padding) .. line)
-    end
-    
-    return centered_lines
-end
+-- No header needed - removed graffiti header function
 
 -- Custom header function that returns the current frame
 local function get_animated_header()
@@ -173,18 +151,12 @@ end
 
 -- Set up the dashboard sections
 dashboard.section.header.val = function()
-    local header_lines = {}
-    -- Add graffiti header
-    local graffiti_lines = get_graffiti_header()
-    for _, line in ipairs(graffiti_lines) do
-        table.insert(header_lines, line)
+    -- Return only the cube animation
+    if #current_frame == 0 then
+        -- Generate initial frame
+        current_frame = render_cube_frame(rotation.A, rotation.B, rotation.C)
     end
-    -- Add cube animation
-    local cube_frame = get_animated_header()
-    for _, line in ipairs(cube_frame) do
-        table.insert(header_lines, line)
-    end
-    return header_lines
+    return current_frame
 end
 dashboard.section.header.opts.hl = "AlphaHeader"
 
@@ -211,14 +183,24 @@ dashboard.section.footer.val = {
   "⚡ Neovim loaded",
 }
 
--- Set up the layout - center everything in the window
+-- Calculate dynamic padding for vertical centering
+local function get_vertical_padding()
+    local terminal_height = vim.o.lines
+    local cube_height = 25 -- cube rendering area
+    local footer_height = 2 -- footer lines
+    local total_content_height = cube_height + footer_height + 1 -- +1 for padding between sections
+    
+    local available_space = terminal_height - total_content_height
+    return math.max(1, math.floor(available_space / 2))
+end
+
+-- Set up the layout with dynamic vertical centering
 dashboard.config.layout = {
-    { type = "padding", val = 2 },
+    { type = "padding", val = function() return get_vertical_padding() end },
     dashboard.section.header,
     { type = "padding", val = 1 },
     dashboard.section.footer,
 }
-
 
 -- Auto commands to start/stop animation
 vim.api.nvim_create_autocmd("User", {
@@ -249,7 +231,6 @@ vim.api.nvim_create_autocmd("BufEnter", {
         end
     end,
 })
-
 
 -- Set up alpha
 alpha.setup(dashboard.config)
