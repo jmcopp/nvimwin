@@ -151,38 +151,6 @@ return {
               end)
             end,
           },
-          ["\\"] = {
-            desc = "Open folder in muCommander",
-            callback = function(self, item)
-              vim.notify("Backslash pressed - opening muCommander!", vim.log.levels.INFO)
-              
-              if not item or not item.file then 
-                vim.notify("No item or file!", vim.log.levels.ERROR)
-                return 
-              end
-              
-              local file = item.file
-              local absolute_file = vim.fn.fnamemodify(file, ":p")
-              local dir = vim.fn.fnamemodify(absolute_file, ":h")
-              
-              vim.schedule(function()
-                local cmd = string.format('cmd /c start "" mucommander "%s"', dir)
-                
-                local job_id = vim.fn.jobstart(cmd, {
-                  detach = true,
-                  on_exit = function(_, exit_code)
-                    if exit_code ~= 0 then
-                      vim.notify("Failed to open muCommander (exit code: " .. exit_code .. ")", vim.log.levels.ERROR)
-                    end
-                  end,
-                })
-                
-                if job_id <= 0 then
-                  vim.notify("Failed to start muCommander", vim.log.levels.ERROR)
-                end
-              end)
-            end,
-          },
           ["<Esc>"] = "close",  -- Easy close with Escape
           ["q"] = "close",      -- Quick close with q
         },
@@ -447,6 +415,42 @@ return {
         }
       end
     end
+    
+    -- muCommander integration: Global function to open muCommander from Snacks explorer
+    _G.open_in_mucommander = function()
+      -- Find snacks explorer window
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        local ft = vim.bo[buf].filetype
+        
+        if ft == "snacks_explorer" or ft == "snacks" or ft == "snacks_layout_box" then
+          -- Get cursor position and extract file path
+          local cursor = vim.api.nvim_win_get_cursor(win)
+          local line = vim.api.nvim_buf_get_lines(buf, cursor[1]-1, cursor[1], false)[1]
+          
+          -- Try to parse the line for file path
+          local file = line:match("([^%s]+)$")
+          local dir
+          if file and file ~= "" then
+            local absolute = vim.fn.fnamemodify(file, ":p")
+            dir = vim.fn.fnamemodify(absolute, ":h")
+          else
+            -- Fallback: use current working directory
+            dir = vim.fn.getcwd()
+          end
+          
+          -- Launch muCommander
+          vim.schedule(function()
+            local cmd = {"C:\\Users\\jcoppick\\scoop\\shims\\mucommander.exe", dir}
+            vim.fn.jobstart(cmd, { detach = true })
+          end)
+          break
+        end
+      end
+    end
+    
+    -- Global keymap to open muCommander from explorer
+    vim.keymap.set("n", "<leader>\\", _G.open_in_mucommander, { desc = "Open in muCommander" })
     
     vim.api.nvim_create_autocmd("User", {
       pattern = "VeryLazy",
