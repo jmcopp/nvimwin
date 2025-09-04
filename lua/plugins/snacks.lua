@@ -13,144 +13,6 @@ return {
         width = 50,  -- Try a fixed wider width first
         position = "left",
         keys = {
-          ["<CR>"] = {
-            desc = "Edit file and close explorer",
-            callback = function(self, item)
-              if not item or not item.file then return end
-              
-              local file = item.file
-              local ext = vim.fn.fnamemodify(file, ":e"):lower()
-              
-              -- Text/code files that should open in Neovim
-              local neovim_exts = {
-                -- Text formats
-                txt = true, md = true, markdown = true,
-                -- Programming languages
-                lua = true, vim = true, py = true, js = true, ts = true,
-                jsx = true, tsx = true, c = true, cpp = true, h = true,
-                hpp = true, rs = true, go = true, java = true, sh = true,
-                bash = true, zsh = true, fish = true,
-                -- Config files
-                json = true, yaml = true, yml = true, toml = true, ini = true,
-                conf = true, config = true, xml = true, html = true, css = true,
-                scss = true, sass = true,
-                -- Other text files
-                log = true, csv = true, sql = true, diff = true, patch = true,
-                gitignore = true, env = true,
-              }
-              
-              -- Check if it's a text file or has no extension (likely text)
-              if neovim_exts[ext] or ext == "" then
-                -- Close explorer first
-                self:close()
-                -- Then open the file
-                vim.schedule(function()
-                  vim.cmd("edit " .. vim.fn.fnameescape(file))
-                end)
-              else
-                -- For non-text files, use system open but keep explorer open
-                self.keys["<C-o>"].callback(self, item)
-              end
-            end,
-          },
-          ["<C-o>"] = {
-            desc = "Open with system default",
-            callback = function(self, item)
-              vim.notify("*** CTRL+O pressed - our config IS working! ***", vim.log.levels.WARN)
-              if not item or not item.file then return end
-              
-              local file = item.file
-              local ext = vim.fn.fnamemodify(file, ":e"):lower()
-              
-              vim.schedule(function()
-                -- Convert to absolute path and escape properly for Windows
-                local absolute_file = vim.fn.fnamemodify(file, ":p")
-                
-                -- Windows commands - using cmd /c for better compatibility
-                local commands = {
-                  -- Browser for PDFs
-                  ["pdf"] = function(path)
-                    return string.format('cmd /c start "" "%s"', path)
-                  end,
-                  
-                  -- Microsoft Office
-                  ["xlsx"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE" "%s"', path)
-                  end,
-                  ["xls"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE" "%s"', path)
-                  end,
-                  ["docx"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\WINWORD.EXE" "%s"', path)
-                  end,
-                  ["doc"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\WINWORD.EXE" "%s"', path)
-                  end,
-                  
-                  -- SOLIDWORKS files
-                  ["sldprt"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\SLDWORKS.exe" "%s"', path)
-                  end,
-                  ["sldasm"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\SLDWORKS.exe" "%s"', path)
-                  end,
-                  ["slddrw"] = function(path)
-                    return string.format('cmd /c start "" "C:\\Program Files\\SOLIDWORKS Corp\\SOLIDWORKS\\SLDWORKS.exe" "%s"', path)
-                  end,
-                  
-                  -- Additional common formats
-                  ["png"] = function(path)
-                    return string.format('cmd /c start "" "%s"', path)
-                  end,
-                  ["jpg"] = function(path)
-                    return string.format('cmd /c start "" "%s"', path)
-                  end,
-                  ["jpeg"] = function(path)
-                    return string.format('cmd /c start "" "%s"', path)
-                  end,
-                  ["html"] = function(path)
-                    return string.format('cmd /c start "" "%s"', path)
-                  end,
-                }
-                
-                local cmd_func = commands[ext]
-                if cmd_func then
-                  local cmd = cmd_func(absolute_file)
-                  
-                  -- Debug output
-                  vim.notify("Opening: " .. absolute_file, vim.log.levels.INFO)
-                  
-                  -- Check if file exists
-                  if vim.fn.filereadable(absolute_file) ~= 1 then
-                    vim.notify("File not found: " .. absolute_file, vim.log.levels.ERROR)
-                    return
-                  end
-                  
-                  -- Execute the command using job for better async handling
-                  local job_id = vim.fn.jobstart(cmd, {
-                    detach = true,
-                    on_exit = function(_, exit_code)
-                      if exit_code ~= 0 then
-                        vim.notify("Failed to open file (exit code: " .. exit_code .. ")", vim.log.levels.ERROR)
-                      end
-                    end,
-                    on_stderr = function(_, data)
-                      if data and #data > 0 and data[1] ~= "" then
-                        vim.notify("Error: " .. table.concat(data, "\n"), vim.log.levels.ERROR)
-                      end
-                    end,
-                  })
-                  
-                  if job_id <= 0 then
-                    vim.notify("Failed to start external program", vim.log.levels.ERROR)
-                  end
-                else
-                  -- Default action for text files (open in nvim)
-                  vim.cmd("edit " .. vim.fn.fnameescape(file))
-                end
-              end)
-            end,
-          },
           ["<Esc>"] = "close",  -- Easy close with Escape
           ["q"] = "close",      -- Quick close with q
         },
@@ -416,41 +278,65 @@ return {
       end
     end
     
-    -- muCommander integration: Global function to open muCommander from Snacks explorer
-    _G.open_in_mucommander = function()
-      -- Find snacks explorer window
-      for _, win in ipairs(vim.api.nvim_list_wins()) do
-        local buf = vim.api.nvim_win_get_buf(win)
-        local ft = vim.bo[buf].filetype
+    -- Files app integration: Open Files app in directory of current file
+    _G.open_in_files = function()
+      local current_file = vim.fn.expand('%:p')
+      local dir
+      
+      if current_file and current_file ~= '' then
+        dir = vim.fn.fnamemodify(current_file, ':h')
+        vim.notify("Opening Files app in: " .. dir, vim.log.levels.INFO)
+      else
+        dir = vim.fn.getcwd()
+        vim.notify("No current file, using working directory: " .. dir, vim.log.levels.INFO)
+      end
+      
+      -- Launch Files app using your exact command pattern
+      vim.schedule(function()
+        -- Convert forward slashes to backslashes for Windows
+        dir = dir:gsub('/', '\\')
+        -- Remove any trailing backslash to avoid double backslashes
+        dir = dir:gsub('\\+$', '')
         
-        if ft == "snacks_explorer" or ft == "snacks" or ft == "snacks_layout_box" then
-          -- Get cursor position and extract file path
-          local cursor = vim.api.nvim_win_get_cursor(win)
-          local line = vim.api.nvim_buf_get_lines(buf, cursor[1]-1, cursor[1], false)[1]
-          
-          -- Try to parse the line for file path
-          local file = line:match("([^%s]+)$")
-          local dir
-          if file and file ~= "" then
-            local absolute = vim.fn.fnamemodify(file, ":p")
-            dir = vim.fn.fnamemodify(absolute, ":h")
-          else
-            -- Fallback: use current working directory
-            dir = vim.fn.getcwd()
-          end
-          
-          -- Launch muCommander
-          vim.schedule(function()
-            local cmd = {"C:\\Users\\jcoppick\\scoop\\shims\\mucommander.exe", dir}
-            vim.fn.jobstart(cmd, { detach = true })
-          end)
-          break
-        end
+        local cmd = 'powershell -Command "start shell:AppsFolder\\Files_1y0xx7n9077q4!App \\"' .. dir .. '\\""'
+        vim.fn.jobstart(cmd, { detach = true })
+      end)
+    end
+    
+    -- Files app integration with file closing: Open Files app for current file, then close it
+    _G.open_file_and_files_app = function()
+      local current_file = vim.fn.expand('%:p')
+      local dir
+      
+      if current_file and current_file ~= '' then
+        dir = vim.fn.fnamemodify(current_file, ':h')
+        
+        -- Convert forward slashes to backslashes for Windows
+        dir = dir:gsub('/', '\\')
+        -- Remove any trailing backslash to avoid double backslashes
+        dir = dir:gsub('\\+$', '')
+        
+        -- Launch Files app
+        local cmd = 'powershell -Command "start shell:AppsFolder\\Files_1y0xx7n9077q4!App \\"' .. dir .. '\\""'
+        vim.fn.jobstart(cmd, { detach = true })
+        
+        -- Close the current file
+        vim.cmd('q')
+      else
+        -- Fallback to current working directory
+        dir = vim.fn.getcwd()
+        dir = dir:gsub('/', '\\')
+        dir = dir:gsub('\\+$', '')
+        
+        local cmd = 'powershell -Command "start shell:AppsFolder\\Files_1y0xx7n9077q4!App \\"' .. dir .. '\\""'
+        vim.fn.jobstart(cmd, { detach = true })
+        
+        vim.notify("No current file, opened Files in working directory: " .. dir, vim.log.levels.INFO)
       end
     end
     
-    -- Global keymap to open muCommander from explorer
-    vim.keymap.set("n", "<leader>\\", _G.open_in_mucommander, { desc = "Open in muCommander" })
+    -- Global keymap to open Files app for current file's directory
+    vim.keymap.set("n", "<leader>\\", _G.open_file_and_files_app, { desc = "Open file and Files app, then close file" })
     
     vim.api.nvim_create_autocmd("User", {
       pattern = "VeryLazy",
